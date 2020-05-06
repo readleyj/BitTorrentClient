@@ -71,26 +71,41 @@ class Announcer:
     def __init__(self, torrent: TorrentInfo) -> None:
         self.torrent = torrent
         self.peer_id = None
-        self.http_client = aiohttp.ClientSession()
 
     async def announce(self, event: EventType) -> bool:
-        req_params = self._get_request_params()
+        req_params = self.request_params
 
-        if event.STARTED:
-            req_params['event'] = 'started'
+        if event != EventType.None:
+            req_params['event'] = event.name.lower()
+        if self.last_response.tracker_id is not None:
+            req_params['trackerid'] = self.last_response.tracker_id
 
         connect_url = self.torrent.announce_url + '?' + urlencode(req_params)
 
-        async with self.http_client.get(connect_url) as conn:
-            if not response.status == 200:
-                raise ConnectionError('Unable to connect to tracker')
+        async with aiohttp.ClientSession() as session:
+            async with session.get(connect_url) as conn:
+                if not conn.status == 200:
+                    raise ConnectionError('Unable to connect to tracker')
 
-            response = await conn.read()
+                response = await conn.read()
 
         response = bencode.decode(response)
 
-        if response:
-            self.last_response = Response(response)
-            return True
+        if not response:
+            return False
 
-        return False
+        response = cast(OrderedDict, response)
+        self.last_response = Response(response)
+        return True
+
+    @property
+    def request_params(self):
+        return {
+            'info_hash': self.torrent_info.info_hash,
+            'peer_id': self.peer_id,
+            'port': config.PORT_NUM,
+            'uploaded': 0,
+            'downloaded': 0,
+            'left': self.download_info.left,
+            'compact': 1
+        }
