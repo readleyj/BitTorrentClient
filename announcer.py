@@ -70,7 +70,7 @@ class Response:
 class Announcer:
     def __init__(self, torrent: TorrentInfo) -> None:
         self.torrent = torrent
-        self.peer_id = None
+        self.peer_id = self._get_peer_id()
 
     async def announce(self, event: EventType) -> bool:
         req_params = self.request_params
@@ -97,6 +97,11 @@ class Announcer:
         response = cast(OrderedDict, response)
         self.last_response = Response(response)
         return True
+
+    def _get_peer_id(self):
+        client_info = '-{}{}-'.format(config.PEER_NAME, config.VERSION_NUM)
+        random_nums = ''.join([str(random.randint(0, 9)) for _ in range(12)])
+        return client_info + random_nums
 
     @property
     def request_params(self):
