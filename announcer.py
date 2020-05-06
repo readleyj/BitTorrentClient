@@ -3,6 +3,7 @@ import logging
 from urllib.parse import urlencode
 from enum import Enum
 from typing import Dict
+from collections import OrderedDict
 
 import aiohttp
 import bencodepy
@@ -30,33 +31,39 @@ class EventType(Enum):
 
 
 class Response:
-    def __init__(self, response) -> None:
+    def __init__(self, response: OrderedDict) -> None:
         self.response = response
+        self.parse_required_fields()
+        self.parse_optional_fields()
 
-    @property
-    def failure(self) -> bool:
-        failure_reason = self.response.get(b'failure reason', '').decode()
+    def parse_required_fields(self) -> None:
+        self.failure_reason = self.response.get(b'failure reason', None)
 
-        return failure_reason if failure_reason else None
+        if self.failure_reason:
+            raiseTrackerError(self.failure_reason.decode('utf-8'))
 
-    @property
-    def interval(self) -> int:
-        return self.response.get(b'interval', 0)
+        self.interval = self.response[b'interval']
+        self.min_interval = self.response.get(b'min interval', None)
 
-    @property
-    def complete(self) -> int:
-        return self.response.get(b'complete', 0)
-
-    @property
-    def incomplete(self) -> int:
-        return self.response.get(b'incomplete', 0)
-
-    @property
-    def peers(self):
         peers = self.response[b'peers']
 
-        peers = [peers[i: i + 6] for i in range(0, len(peers), 6)]
-        return [Peer.from_compact(p) for p in peers]
+        if isinstance(peers, bytes):
+            peers = [peers[i: i + 6] for i in range(0, len(peers), 6)]
+            self.peers = [Peer.from_compact(p) for p in peers]
+        else:
+            pass
+            # Handle dict
+
+    def parse_optional_fields(self) -> None:
+        self.warning_message = self.response(b'warning message', None)
+
+        if self.warning_message:
+            logger.warning('Tracker returned warning {}',
+                           self.response.warning_message.decode('utf-8'))
+
+        self.tracker_id = self.response.get(b'tracker id', None)
+        self.seed_count = self.response(b'complete', None)
+        self.leech_count = self.response(b'incomplete', None)
 
 
 class Announcer:
