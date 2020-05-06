@@ -48,7 +48,8 @@ class Response:
         peers = self.response[b'peers']
 
         if isinstance(peers, bytes):
-            peers = [peers[i: i + 6] for i in range(0, len(peers), 6)]
+            size = config.COMPACT_PEER_SIZE
+            peers = [peers[i: i + size] for i in range(0, len(peers), size)]
             self.peers = [Peer.from_compact(p) for p in peers]
         else:
             pass
