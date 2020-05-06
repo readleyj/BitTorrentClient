@@ -18,10 +18,6 @@ class FileInfo:
 
 
 class TorrentInfo:
-    """
-    Wrapper for the metadata that is contained in the .torrent file
-    """
-
     def __init__(self, file_path: str) -> None:
         self.file_path = file_path
         self.files = []
@@ -52,9 +48,6 @@ class TorrentInfo:
 
     @property
     def creation_date(self) -> int:
-        """
-        The creation time of the torrent, in standard UNIX epoch format
-        """
         return self.meta_info[b'creation date']
 
     @property
