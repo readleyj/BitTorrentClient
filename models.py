@@ -11,14 +11,18 @@ class Peer:
         self.peer_id = peer_id
 
     @classmethod
-    def from_compact(cls, data: bytes) -> Peer:
+    def from_compact(cls, data: bytes):
         host, port = struct.unpack('!4sH', data)
         host = socket.inet_ntoa(host)
         return cls(host, port)
 
     @classmethod
-    def from_dict(cls, info_dict: OrderedDict) -> Peer:
+    def from_dict(cls, info_dict: OrderedDict):
         pass
+
+    def __str__(self):
+        return 'Peer IP: {} \n' \
+               'Peer Port: {}'.format(self.host, self.port)
 
 
 class Handshake:
@@ -36,6 +40,6 @@ class Handshake:
         )
 
     @classmethod
-    def from_packed(cls, data: bytes) -> Handshake:
+    def from_packed(cls, data: bytes):
         parts = struct.unpack('>B19s8x20s20s', data)
         return cls(info_hash=parts[2], peer_id=parts[3])
