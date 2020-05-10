@@ -6,6 +6,8 @@ PORT_NUM = 6889
 # Connection Parameters
 PIECE_LENGTH = 20
 COMPACT_PEER_SIZE = 6
+DEFAULT_MIN_INTERVAL = 90
+NUM_CONNECTIONS = 20
 
 # Protocol Info
 pstrlen = 19
