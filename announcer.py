@@ -4,16 +4,18 @@ from urllib.parse import urlencode
 from enum import Enum
 from typing import Dict
 from collections import OrderedDict
+from typing import Optional, cast
 
 import aiohttp
 import bencodepy
 
 import config
 from torrent import TorrentInfo
+from models import Peer
 
 
 class EventType(Enum):
-    None = 0
+    NONE = 0
     COMPLETED = 1
     STARTED = 2
     STOPPED = 3
@@ -56,28 +58,29 @@ class Response:
             # Handle dict
 
     def parse_optional_fields(self) -> None:
-        self.warning_message = self.response(b'warning message', None)
+        self.warning_message = self.response.get(b'warning message', None)
 
         if self.warning_message:
             logger.warning('Tracker returned warning {}',
                            self.response.warning_message.decode('utf-8'))
 
         self.tracker_id = self.response.get(b'tracker id', None)
-        self.seed_count = self.response(b'complete', None)
-        self.leech_count = self.response(b'incomplete', None)
+        self.seed_count = self.response.get(b'complete', None)
+        self.leech_count = self.response.get(b'incomplete', None)
 
 
 class Announcer:
     def __init__(self, torrent: TorrentInfo) -> None:
         self.torrent = torrent
         self.peer_id = self._get_peer_id()
+        self.last_response = None
 
     async def announce(self, event: EventType) -> bool:
         req_params = self.request_params
 
-        if event != EventType.None:
+        if event != EventType.NONE:
             req_params['event'] = event.name.lower()
-        if self.last_response.tracker_id is not None:
+        if self.last_response and self.last_response.tracker_id is not None:
             req_params['trackerid'] = self.last_response.tracker_id
 
         connect_url = self.torrent.announce_url + '?' + urlencode(req_params)
@@ -89,7 +92,7 @@ class Announcer:
 
                 response = await conn.read()
 
-        response = bencode.decode(response)
+        response = bencodepy.decode(response)
 
         if not response:
             return False
@@ -106,11 +109,11 @@ class Announcer:
     @property
     def request_params(self):
         return {
-            'info_hash': self.torrent_info.info_hash,
+            'info_hash': self.torrent.info_hash,
             'peer_id': self.peer_id,
             'port': config.PORT_NUM,
             'uploaded': 0,
             'downloaded': 0,
-            'left': self.download_info.left,
+            'left': 0,
             'compact': 1
         }
