@@ -75,6 +75,10 @@ class Announcer:
         self.peer_id = self._get_peer_id()
         self.last_response = None
 
+    @property
+    def has_announced(self) -> bool:
+        return self.last_response is not None
+
     async def announce(self, event: EventType) -> bool:
         req_params = self.request_params
 
