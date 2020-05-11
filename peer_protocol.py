@@ -27,26 +27,26 @@ class PeerConnection:
         self.reader, self.writer = await asyncio.open_connection(peer.host, peer.port)
         await self.send_handshake()
         await self.receive_handshake()
-        
+
     async def send_handshake(self):
         print('Sending handshake')
-        handshake = Handshake(self.info_hash, self.peer_id)
+        handshake = Handshake(self.info_hash, self.client_id)
         self.writer.write(handshake.encode())
         await self.writer.drain()
 
     async def receive_handshake(self):
-        print('Waiting for handshake')
-        response = await self.reader.readexactly(config.HANDSHAKE_LENGTH)
-        handshake = handshake.from_packed(response)
+        response = await asyncio.wait_for(self.reader.readexactly(config.HANDSHAKE_LENGTH), config.READ_TIMEOUT)
+
+        if not response:
+            raise ProtocolError('Could not receive handshake')
+
+        handshake = Handshake.from_packed(response)
 
         if not handshake:
-            raise ProtocolError('Could not receive and process handshake')
+            raise ProtocolError('Unknown protocol')
 
         if not handshake.info_hash == self.info_hash:
             raise ProtocolError('Received handshake with invalid info hash')
-
-        if handshake.pstr != config.pstr or handshake.pstrlen != config.pstrlen:
-            raise ProtocolError('Unknown protocol')
 
         self.remote_id = handshake.peer_id
         self.connected = True
