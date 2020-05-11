@@ -3,6 +3,19 @@ import config
 from models import Handshake
 
 
+class MessageType(Enum):
+    CHOKE = 0
+    UNCHOKE = 1
+    INTERESTED = 2
+    NOT_INTERESTED = 3
+    HAVE = 4
+    BITFIELD = 5
+    REQUEST = 6
+    PIECE = 7
+    CANCEL = 8
+    PORT = 9
+
+
 class PeerConnection:
     def __init__(self, peer_queue: asyncio.Queue, client_id: int, info_hash: bytes) -> None:
         self.client_id = client_id
