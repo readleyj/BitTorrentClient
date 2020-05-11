@@ -26,9 +26,15 @@ class Peer:
 
 
 class Handshake:
-    def __init__(self, info_hash: bytes, peer_id: int) -> None:
+    def __init__(self, info_hash: bytes, peer_id: bytes) -> None:
         self.info_hash = info_hash
+
+        if isinstance(peer_id, str):
+            peer_id = peer_id.encode('utf-8')
+
         self.peer_id = peer_id
+
+        print(self.info_hash)
 
     def encode(self) -> None:
         return struct.pack(
@@ -36,10 +42,14 @@ class Handshake:
             config.pstrlen,
             config.pstr,
             self.info_hash,
-            self.peer_id.encode('utf-8')
+            self.peer_id
         )
 
     @classmethod
     def from_packed(cls, data: bytes):
         parts = struct.unpack('>B19s8x20s20s', data)
+
+        if parts[0] != config.pstrlen or parts[1] != config.pstr:
+            return None
+
         return cls(info_hash=parts[2], peer_id=parts[3])
