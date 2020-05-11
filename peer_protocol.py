@@ -1,5 +1,6 @@
 import asyncio
 import config
+from enum import Enum
 from models import Handshake
 
 
