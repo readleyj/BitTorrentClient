@@ -43,7 +43,6 @@ class PeerConnection:
         await self.receive_handshake()
 
     async def send_handshake(self):
-        print('Sending handshake')
         handshake = Handshake(self.info_hash, self.client_id)
         self.writer.write(handshake.encode())
         await self.writer.drain()
@@ -65,3 +64,14 @@ class PeerConnection:
         self.remote_id = handshake.peer_id
         self.connected = True
         print('ID of remote peer is {}'.format(self.remote_id))
+
+    async def receive_message(self):
+        max_len = config.LENGTH_PREFIX_LENGTH
+        data = await self.reader.readexactly(max_len)
+        (length,) = struct.unpack('!I', message_data)
+
+        data = await self.reader.readexactly(length)
+        message_id = MessageType(data[0])
+        payload = memoryview[1:]
+
+        return message_id, payload      
