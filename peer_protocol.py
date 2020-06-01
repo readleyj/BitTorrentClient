@@ -1,7 +1,9 @@
 import asyncio
-import config
 from enum import Enum
+
+import config
 from models import Handshake
+from util import dispatch_on_value
 
 
 class MessageType(Enum):
@@ -36,6 +38,15 @@ class PeerConnection:
     async def run(self):
         await self.connect()
 
+        while True:
+            message = self.receive_handshake()
+
+            if message is None:
+                continue
+
+            message_id, payload = message
+            self.handle_message(message_id, payload)
+
     async def connect(self):
         peer = await self.peer_queue.get()
         self.reader, self.writer = await asyncio.open_connection(peer.host, peer.port)
@@ -66,12 +77,61 @@ class PeerConnection:
         print('ID of remote peer is {}'.format(self.remote_id))
 
     async def receive_message(self):
-        max_len = config.LENGTH_PREFIX_LENGTH
+        max_len = config.LENGTH_PREFIX_SIZE
         data = await self.reader.readexactly(max_len)
         (length,) = struct.unpack('!I', message_data)
+
+        # keep-alive
+        if length == 0:
+            return None
 
         data = await self.reader.readexactly(length)
         message_id = MessageType(data[0])
         payload = memoryview[1:]
 
-        return message_id, payload      
+        return message_id, payload   
+
+    @dispatch_on_value
+    def handle_message(message_id, payload):
+        # This corresponds to an invalid message id. Raise exception here
+        pass
+
+    @handle_message.register(MessageType.CHOKE)
+    def _(message_id, payload):
+        self.peer_choking = True
+
+    @handle_message.register(MessageType.UNCHOKE)
+    def _(message_id, payload):
+        self.peer_choking = False
+
+    @handle_message.register(MessageType.INTERESTED)
+    def _(message_id, payload):
+        self.peer_interested = True
+
+    @handle_message.register(MessageType.NOT_INTERESTED)
+    def _(message_id, payload):
+        self.peer_interested = False
+
+    @handle_message.register(MessageType.HAVE)
+    def _(message_id, payload):
+        pass
+
+    @handle_message.register(MessageType.BITFIELD)
+    def _(message_id, payload):
+        pass
+
+    @handle_message.register(MessageType.REQUEST)
+    def _(message_id, payload):
+        pass
+    
+    @handle_message.register(MessageType.PIECE)
+    def _(message_id, payload):
+        pass
+
+    @handle_message.register(MessageType.CANCEL)
+    def _(message_id, payload):
+        pass
+
+    @handle_message.register(MessageType.PORT)
+    def _(message_id, payload):
+        pass
