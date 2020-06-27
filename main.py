@@ -5,8 +5,6 @@ from announcer import Announcer, EventType
 from client import Client
 import asyncio
 
-torrent_url = r'C:\Users\Ismayil\Desktop\Projects\BitTorrent\data\archlinux-2020.05.01-x86_64.iso.torrent'
-
 new_torrent = TorrentInfo(torrent_url)
 client = Client(new_torrent)
 
