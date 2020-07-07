@@ -16,3 +16,4 @@ pstr = b'BitTorrent protocol'
 reserved_bytes = b'\0' * 8
 HANDSHAKE_LENGTH = 68
 LENGTH_PREFIX_SIZE = 4
+REQUEST_SIZE = 2 ** 14
