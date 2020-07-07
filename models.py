@@ -86,7 +86,12 @@ class Piece:
         return None
 
     def set_block_received(self, offset, data):
-        pass
+        matched = [block for block in self.blocks if block.offset == offset]
+        block = matched[0] if matched else None
+
+        if block:
+            block.status = Block.RETRIEVED
+            block.data = data
 
     def is_complete(self):
         missing_blocks = [block for block in self.blocks if block.status is not Block.RETRIEVED]
@@ -95,3 +100,9 @@ class Piece:
     def is_hash_matching(self):
         piece_hash = sha1(self.data).digest()
         return self.hash == piece.hash
+
+    @property
+    def data(self):
+        retrieved = sorted(self.blocks, key=lambda b: b.offset)
+        blocks = [block.data for block in retrieved]
+        return b''.join(blocks)
