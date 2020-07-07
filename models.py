@@ -53,3 +53,17 @@ class Handshake:
             return None
 
         return cls(info_hash=parts[2], peer_id=parts[3])
+
+
+class Block:
+    MISSING = 0
+    PENDING = 1
+    RETRIEVED = 2
+
+    def __init__(self, piece, offset, length):
+        self.piece = piece
+        self.offset = offset
+        self.length = length
+        self.status = Block.MISSING
+        self.data = None
+
