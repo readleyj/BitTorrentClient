@@ -67,3 +67,31 @@ class Block:
         self.status = Block.MISSING
         self.data = None
 
+
+class Piece:
+    def __init__(self, index, blocks, hash_value):
+        self.index = index
+        self.blocks = blocks
+        self.hash = hash_value
+
+    def reset_blocks(self):
+        for block in self.blocks:
+            block.status = Block.MISSING
+
+    def next_block(self):
+        missing_blocks = [block for block in self.blocks if block.status is Block.MISSING]
+        if missing_blocks:
+            missing_blocks[0].status = Block.PENDING
+            return missing_blocks[0]
+        return None
+
+    def set_block_received(self, offset, data):
+        pass
+
+    def is_complete(self):
+        missing_blocks = [block for block in self.blocks if block.status is not Block.RETRIEVED]
+        return len(missing_blocks) == 0
+
+    def is_hash_matching(self):
+        piece_hash = sha1(self.data).digest()
+        return self.hash == piece.hash
